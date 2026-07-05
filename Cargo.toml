@@ -3,4 +3,10 @@ name = "isingmodel"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "ising_model"
+crate-type = ["cdylib"]
+
 [dependencies]
+rand = "0.9"
+pyo3 = "0.29.0"
