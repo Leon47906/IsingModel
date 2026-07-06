@@ -1,1 +1,1 @@
-from .ising_model import *
+from .ising_model import Lattice as Lattice
