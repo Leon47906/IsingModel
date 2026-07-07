@@ -2,6 +2,35 @@
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
+[project]
+name = "isingmodel"
+description = "A fast 2D Ising model simulator with Metropolis and Wolff algorithms, written in Rust"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Leonard Bajusz" }
+]
+requires-python = ">=3.9"
+keywords = ["ising", "monte-carlo", "physics", "simulation", "statistical-mechanics", "rust", "pyo3"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.24",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+gui = ["PySide6>=6.4"]
+
+[project.urls]
+Repository = "https://github.com/leonardbajusz/isingmodel"
+
 [tool.maturin]
 python-source = "python"
 module-name = "isingmodel.ising_model"

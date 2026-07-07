@@ -8,7 +8,7 @@ from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QImage, QPixmap
 import isingmodel
 
-width, height = 250, 250
+width, height = 500, 500
 
 class IsingWindow(QMainWindow):
     def __init__(self):
@@ -90,7 +90,7 @@ class IsingWindow(QMainWindow):
         self.temp_label.setText(f"T = {self.lattice.temperature:.1f}")
 
     def reset_temperature(self):
-        self.temp_slider.setValue(2)
+        self.temp_slider.setValue(20)
 
     def set_magnetic_field(self, value):
         self.lattice.h_z = value
