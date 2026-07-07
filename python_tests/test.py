@@ -1,57 +1,8 @@
-#import matplotlib
-#matplotlib.use("TkAgg")  # must be set before importing pyplot
-#
-#import numpy as np
-#import matplotlib.pyplot as plt
-#import matplotlib.animation as animation
-#import isingmodel
-#
-#width = 250
-#height = 250
-#temperature = 2.0
-#h_z = 0.1
-#
-#lattice = isingmodel.Lattice(width, height, temperature, h_z)
-#
-#fig, ax = plt.subplots()
-#plt.subplots_adjust(right=0.75)
-#
-#grid = np.array(lattice.as_array()).reshape(lattice.height, lattice.width)
-#img = ax.imshow(grid, cmap="coolwarm", interpolation="nearest", vmin=-1, vmax=1)
-#ax.set_title(f"Ising Model (T = {temperature}, H_z = {h_z})")
-#
-#info_text = fig.text(
-#    0.78, 0.5, "", fontsize=11, verticalalignment="center",
-#    bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
-#)
-#
-#def update(frame):
-#    for _ in range(1000):
-#        lattice.simulation_step()
-#
-#    new_grid = np.array(lattice.as_array()).reshape(lattice.height, lattice.width)
-#    img.set_data(new_grid)
-#
-#    energy = lattice.get_energy()
-#    magnetization = lattice.get_total_magnetization()
-#    n_sites = width * height
-#    info_text.set_text(
-#        f"Step: {frame * 1000}\n\n"
-#        f"Total energy:\n{energy:.2f}\n\n"
-#        f"Total magnetization:\n{magnetization}\n\n"
-#        f"Avg. magnetization:\n{magnetization / n_sites:.4f}"
-#    )
-#
-#    return [img, info_text]
-#
-#ani = animation.FuncAnimation(fig, update, frames=1000, interval=50, blit=False)
-#plt.show()
-
 import sys
 import numpy as np
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QLabel, QSlider, QPushButton,
+    QLabel, QSlider, QPushButton, QComboBox,
 )
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QImage, QPixmap
@@ -70,8 +21,8 @@ class IsingWindow(QMainWindow):
         self.info_label = QLabel()
 
         self.temp_slider = QSlider(Qt.Horizontal)
-        self.temp_slider.setRange(0, 20)
-        self.temp_slider.setValue(2)
+        self.temp_slider.setRange(0, 100)
+        self.temp_slider.setValue(20)
         self.temp_slider.valueChanged.connect(self.set_temperature)
 
         self.temp_label = QLabel(f"T = {self.lattice.temperature:.1f}")
@@ -116,8 +67,26 @@ class IsingWindow(QMainWindow):
         self.timer.timeout.connect(self.update_sim)
         self.timer.start(50)
 
+        self.algorithm_selector = QComboBox()
+        self.algorithm_selector.addItems(["Metropolis", "Wolff"])
+        self.algorithm_selector.currentTextChanged.connect(self.set_algorithm)
+        self.algorithm = "Metropolis"
+
+        controls.addWidget(QLabel("Algorithm:"))
+        controls.addWidget(self.algorithm_selector)
+
+    def set_algorithm(self, text):
+        self.algorithm = text
+        is_wolff = (text == "Wolff")
+        self.mag_slider.setEnabled(not is_wolff)
+        self.reset_mag_button.setEnabled(not is_wolff)
+        if is_wolff and self.lattice.h_z != 0.0:
+            self.lattice.h_z = 0.0
+            self.mag_slider.setValue(0)
+            self.mag_label.setText("H_z = 0.0")
+
     def set_temperature(self, value):
-        self.lattice.temperature = value
+        self.lattice.temperature = value / 10.0
         self.temp_label.setText(f"T = {self.lattice.temperature:.1f}")
 
     def reset_temperature(self):
@@ -137,8 +106,13 @@ class IsingWindow(QMainWindow):
     def update_sim(self):
         if not self.running:
             return
-        for _ in range(1000):
-            self.lattice.simulation_step()
+
+        if self.algorithm == "Metropolis":
+            for _ in range(1000):
+                self.lattice.simulation_step()
+        else:
+            for _ in range(5):
+                self.lattice.wolff_step()
 
         grid = np.array(self.lattice.as_array()).reshape(height, width)
         rgb = np.zeros((height, width, 3), dtype=np.uint8)
@@ -150,8 +124,10 @@ class IsingWindow(QMainWindow):
 
         energy = self.lattice.get_energy()
         mag = self.lattice.get_total_magnetization()
-        avg_mag = mag/(width * height)
-        self.info_label.setText(f"Energy: {energy:.2f}    Magnetization: {mag:.1f}    Avg. Magnetization: {avg_mag:.3f}")
+        avg_mag = mag / (width * height)
+        self.info_label.setText(
+            f"Energy: {energy:.2f}    Magnetization: {mag:.1f}    Avg. Magnetization: {avg_mag:.3f}"
+        )
 
 app = QApplication(sys.argv)
 window = IsingWindow()

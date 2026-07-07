@@ -97,6 +97,34 @@ impl Lattice {
         }
     }
 
+    fn wolff_step(&mut self) {
+        let n = self.width * self.height;
+        let start = self.rng.random_range(0..n);
+        let spin = self.sites[start];
+        let p_add = 1.0 - (-2.0 / self.temperature).exp();
+
+        let mut visited = vec![false; n];
+        let mut stack = vec![start];
+        visited[start] = true;
+        let mut cluster = vec![start];
+
+        while let Some(current) = stack.pop() {
+            for neighbor in self.get_nearest_neighbors(current) {
+                if !visited[neighbor] && self.sites[neighbor] == spin {
+                    if self.rng.random::<f64>() < p_add {
+                        visited[neighbor] = true;
+                        stack.push(neighbor);
+                        cluster.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        for idx in cluster {
+            self.sites[idx] *= -1;
+        }
+    }
+
     fn get_total_magnetization(&self) -> f64 {
         self.sites.iter().map(|&s| s as f64).sum()
     }
