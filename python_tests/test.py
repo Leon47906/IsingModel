@@ -1,14 +1,22 @@
 import sys
 import numpy as np
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QLabel, QSlider, QPushButton, QComboBox,
+    QApplication,
+    QMainWindow,
+    QVBoxLayout,
+    QHBoxLayout,
+    QWidget,
+    QLabel,
+    QSlider,
+    QPushButton,
+    QComboBox,
 )
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QImage, QPixmap
 import isingmodel
 
 width, height = 500, 500
+
 
 class IsingWindow(QMainWindow):
     def __init__(self):
@@ -31,7 +39,7 @@ class IsingWindow(QMainWindow):
         self.reset_temp_button.clicked.connect(self.reset_temperature)
 
         self.mag_slider = QSlider(Qt.Horizontal)
-        self.mag_slider.setRange(-5,5)
+        self.mag_slider.setRange(-5, 5)
         self.mag_slider.setValue(0)
         self.mag_slider.valueChanged.connect(self.set_magnetic_field)
 
@@ -77,7 +85,7 @@ class IsingWindow(QMainWindow):
 
     def set_algorithm(self, text):
         self.algorithm = text
-        is_wolff = (text == "Wolff")
+        is_wolff = text == "Wolff"
         self.mag_slider.setEnabled(not is_wolff)
         self.reset_mag_button.setEnabled(not is_wolff)
         if is_wolff and self.lattice.h_z != 0.0:
@@ -128,6 +136,7 @@ class IsingWindow(QMainWindow):
         self.info_label.setText(
             f"Energy: {energy:.2f}    Magnetization: {mag:.1f}    Avg. Magnetization: {avg_mag:.3f}"
         )
+
 
 app = QApplication(sys.argv)
 window = IsingWindow()

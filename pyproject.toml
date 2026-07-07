@@ -3,7 +3,7 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "isingmodel"
+name = "ising-rs"
 description = "A fast 2D Ising model simulator with Metropolis and Wolff algorithms, written in Rust"
 readme = "README.md"
 license = "MIT"
