@@ -26,7 +26,7 @@ dynamic = ["version"]
 gui = ["PySide6>=6.4", "numpy>=1.24"]
 
 [project.urls]
-Repository = "https://github.com/leonardbajusz/isingmodel"
+Repository = "https://github.com/Leon47906/IsingModel"
 
 [tool.maturin]
 python-source = "python"

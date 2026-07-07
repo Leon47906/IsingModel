@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QPushButton,
     QComboBox,
+    QDoubleSpinBox,
 )
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QImage, QPixmap
@@ -31,19 +32,29 @@ class IsingWindow(QMainWindow):
         self.temp_slider = QSlider(Qt.Horizontal)
         self.temp_slider.setRange(0, 100)
         self.temp_slider.setValue(20)
-        self.temp_slider.valueChanged.connect(self.set_temperature)
+        self.temp_slider.valueChanged.connect(self.on_temp_slider_changed)
 
-        self.temp_label = QLabel(f"T = {self.lattice.temperature:.1f}")
+        self.temp_spinbox = QDoubleSpinBox()
+        self.temp_spinbox.setRange(0.0, 10.0)
+        self.temp_spinbox.setSingleStep(0.1)
+        self.temp_spinbox.setDecimals(2)
+        self.temp_spinbox.setValue(2.0)
+        self.temp_spinbox.valueChanged.connect(self.on_temp_spinbox_changed)
 
         self.reset_temp_button = QPushButton("Reset T")
         self.reset_temp_button.clicked.connect(self.reset_temperature)
 
         self.mag_slider = QSlider(Qt.Horizontal)
-        self.mag_slider.setRange(-5, 5)
+        self.mag_slider.setRange(-500, 500)
         self.mag_slider.setValue(0)
-        self.mag_slider.valueChanged.connect(self.set_magnetic_field)
+        self.mag_slider.valueChanged.connect(self.on_mag_slider_changed)
 
-        self.mag_label = QLabel(f"H_z = {self.lattice.h_z:.1f}")
+        self.mag_spinbox = QDoubleSpinBox()
+        self.mag_spinbox.setRange(-5.0, 5.0)
+        self.mag_spinbox.setSingleStep(0.1)
+        self.mag_spinbox.setDecimals(2)
+        self.mag_spinbox.setValue(0.0)
+        self.mag_spinbox.valueChanged.connect(self.on_mag_spinbox_changed)
 
         self.reset_mag_button = QPushButton("Reset H_z")
         self.reset_mag_button.clicked.connect(self.reset_mag)
@@ -51,16 +62,23 @@ class IsingWindow(QMainWindow):
         self.pause_button = QPushButton("Pause")
         self.pause_button.clicked.connect(self.toggle_pause)
 
+        self.algorithm_selector = QComboBox()
+        self.algorithm_selector.addItems(["Metropolis", "Wolff"])
+        self.algorithm_selector.currentTextChanged.connect(self.set_algorithm)
+        self.algorithm = "Metropolis"
+
         controls = QHBoxLayout()
         controls.addWidget(QLabel("Temperature:"))
         controls.addWidget(self.temp_slider)
-        controls.addWidget(self.temp_label)
+        controls.addWidget(self.temp_spinbox)
         controls.addWidget(self.reset_temp_button)
         controls.addWidget(QLabel("Magnetic field:"))
         controls.addWidget(self.mag_slider)
-        controls.addWidget(self.mag_label)
+        controls.addWidget(self.mag_spinbox)
         controls.addWidget(self.reset_mag_button)
         controls.addWidget(self.pause_button)
+        controls.addWidget(QLabel("Algorithm:"))
+        controls.addWidget(self.algorithm_selector)
 
         layout = QVBoxLayout()
         layout.addWidget(self.image_label)
@@ -75,37 +93,46 @@ class IsingWindow(QMainWindow):
         self.timer.timeout.connect(self.update_sim)
         self.timer.start(50)
 
-        self.algorithm_selector = QComboBox()
-        self.algorithm_selector.addItems(["Metropolis", "Wolff"])
-        self.algorithm_selector.currentTextChanged.connect(self.set_algorithm)
-        self.algorithm = "Metropolis"
-
-        controls.addWidget(QLabel("Algorithm:"))
-        controls.addWidget(self.algorithm_selector)
-
     def set_algorithm(self, text):
         self.algorithm = text
         is_wolff = text == "Wolff"
         self.mag_slider.setEnabled(not is_wolff)
+        self.mag_spinbox.setEnabled(not is_wolff)
         self.reset_mag_button.setEnabled(not is_wolff)
         if is_wolff and self.lattice.h_z != 0.0:
-            self.lattice.h_z = 0.0
-            self.mag_slider.setValue(0)
-            self.mag_label.setText("H_z = 0.0")
+            self.reset_mag()
 
-    def set_temperature(self, value):
-        self.lattice.temperature = value / 10.0
-        self.temp_label.setText(f"T = {self.lattice.temperature:.1f}")
+    def on_temp_slider_changed(self, value):
+        temperature = value / 10.0
+        self.lattice.temperature = temperature
+        self.temp_spinbox.blockSignals(True)
+        self.temp_spinbox.setValue(temperature)
+        self.temp_spinbox.blockSignals(False)
+
+    def on_temp_spinbox_changed(self, value):
+        self.lattice.temperature = value
+        self.temp_slider.blockSignals(True)
+        self.temp_slider.setValue(int(value * 10))
+        self.temp_slider.blockSignals(False)
 
     def reset_temperature(self):
-        self.temp_slider.setValue(20)
+        self.temp_spinbox.setValue(2.0)  # triggers on_temp_spinbox_changed
 
-    def set_magnetic_field(self, value):
+    def on_mag_slider_changed(self, value):
+        h_z = value / 100.0
+        self.lattice.h_z = h_z
+        self.mag_spinbox.blockSignals(True)
+        self.mag_spinbox.setValue(h_z)
+        self.mag_spinbox.blockSignals(False)
+
+    def on_mag_spinbox_changed(self, value):
         self.lattice.h_z = value
-        self.mag_label.setText(f"H_z = {self.lattice.h_z:.1f}")
+        self.mag_slider.blockSignals(True)
+        self.mag_slider.setValue(int(value * 100))
+        self.mag_slider.blockSignals(False)
 
     def reset_mag(self):
-        self.mag_slider.setValue(0)
+        self.mag_spinbox.setValue(0.0)  # triggers on_mag_spinbox_changed
 
     def toggle_pause(self):
         self.running = not self.running
